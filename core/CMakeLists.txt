@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 3.6)
 
 project(python-turingdb)
@@ -92,6 +91,9 @@ execute_process(
 find_package(Threads REQUIRED)
 
 # Python
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
 
 enable_testing()
+
+add_subdirectory(pythonmodule)
+add_subdirectory(native)
