@@ -12,6 +12,7 @@ build:
 	&& $(BUILD_ENV) cmake -DCMAKE_INSTALL_PREFIX=$(TURING_HOME) $(SRC_DIR) \
 	&& make -s $(JOBS) \
 	&& make install \
+	&& uv build $(BUILD_DIR)/pymodule --out-dir $(TURING_HOME)/lib/turingdbWheel \
 	&& date +%s > .build_end \
 	&& echo $$(expr $$(cat .build_end) - $$(cat .build_start)) > .build_time \
 	&& echo "Build passed in $$(cat .build_time) seconds."

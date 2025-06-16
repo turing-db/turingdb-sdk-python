@@ -20,4 +20,8 @@ target_include_directories(turingdb_core_pymodule PRIVATE ${Python3_INCLUDE_DIRS
 target_link_libraries(turingdb_core_pymodule PRIVATE 
                      turing_client_cpp_request )
 
-
+add_custom_command(TARGET turingdb_core_pymodule POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+    $<TARGET_FILE:turingdb_core_pymodule>
+    ${CMAKE_BINARY_DIR}/pymodule/turingdb/
+)
