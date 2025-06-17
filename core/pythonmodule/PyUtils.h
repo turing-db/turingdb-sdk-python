@@ -1,7 +1,6 @@
 #include <Python.h>
 #include <memory>
 #include <vector>
-#include <string>
 
 namespace turingClient {
 class TypedColumn;

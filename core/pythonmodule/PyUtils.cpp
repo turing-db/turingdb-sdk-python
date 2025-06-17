@@ -1,97 +1,72 @@
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#define NO_IMPORT_ARRAY
+#define PY_ARRAY_UNIQUE_SYMBOL NPY_TuringDB
+
 #include "PyUtils.h"
 
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/ndarrayobject.h>
 
+#include "Profiler.h"
 #include "TypedColumn.h"
 
 using namespace turingClient;
 
-void turingPyModule::printPythonObject(PyObject* obj, const char* name, bool use_repr) {
-    if (!obj) {
-        if (name && strlen(name) > 0) {
-            std::cout << name << ": NULL" << std::endl;
-        } else {
-            std::cout << "NULL" << std::endl;
+static PyObject* ma_module = NULL;
+static PyObject* ma_array_func = NULL;
+
+static int init_numpy_ma() {
+    if (!ma_module) {
+        ma_module = PyImport_ImportModule("numpy.ma");
+        if (!ma_module) {
+            return -1;
         }
-        return;
-    }
 
-    // Get Python's print function
-    PyObject* builtins = PyImport_ImportModule("builtins");
-    if (!builtins) {
-        std::cout << "Failed to import builtins" << std::endl;
-        return;
-    }
-
-    PyObject* print_func = PyObject_GetAttrString(builtins, "print");
-    if (!print_func) {
-        Py_DECREF(builtins);
-        std::cout << "Failed to get print function" << std::endl;
-        return;
-    }
-
-    if (name && strlen(name) > 0) {
-        PyObject* name_str = PyUnicode_FromString((std::string(name) + ":").c_str());
-        if (use_repr) {
-            PyObject* repr_obj = PyObject_Repr(obj);
-            PyObject_CallFunction(print_func, "OO", name_str, repr_obj);
-            Py_XDECREF(repr_obj);
-        } else {
-            PyObject_CallFunction(print_func, "OO", name_str, obj);
-        }
-        Py_DECREF(name_str);
-    } else {
-        if (use_repr) {
-            PyObject* repr_obj = PyObject_Repr(obj);
-            PyObject_CallFunction(print_func, "O", repr_obj);
-            Py_XDECREF(repr_obj);
-        } else {
-            PyObject_CallFunction(print_func, "O", obj);
+        ma_array_func = PyObject_GetAttrString(ma_module, "array");
+        if (!ma_array_func) {
+            Py_DECREF(ma_module);
+            ma_module = NULL;
+            return -1;
         }
     }
-
-    Py_DECREF(print_func);
-    Py_DECREF(builtins);
+    return 0;
 }
 
 void destroyTypedColumns(PyObject* capsule) {
     std::vector<std::unique_ptr<turingClient::TypedColumn>>* col = static_cast<std::vector<std::unique_ptr<turingClient::TypedColumn>>*>(
         PyCapsule_GetPointer(capsule, NULL));
-    std::cout << "destroying capsule \n";
     delete col;
 }
 
 PyObject* turingPyModule::createMaskedArray(PyObject* dataArray, PyObject* maskArray) {
-    PyObject* ma_module = PyImport_ImportModule("numpy.ma");
-    if (!ma_module) {
-        Py_DECREF(dataArray);
-        Py_DECREF(maskArray);
+    Profile profile {"turingPyModule::createMaskedArray"};
+
+    if (init_numpy_ma() < 0) {
+        return NULL;
+    }
+    PyObject* kwargs = PyDict_New();
+    if (!kwargs) {
         return NULL;
     }
 
-    PyObject* maArgs = PyTuple_Pack(5, dataArray, Py_None, Py_False, Py_None, maskArray);
+    PyDict_SetItemString(kwargs, "mask", maskArray);
 
-
-    // Call numpy.ma.array(data, mask=mask)
-    PyObject* maskedArray = PyObject_CallMethod(
-        ma_module, "array", "O", maArgs);
-
-    if (!maskedArray) {
-        std::cout << "could not make masked array";
-        Py_DECREF(ma_module);
-        Py_DECREF(maArgs);
+    PyObject* args = PyTuple_Pack(1, dataArray);
+    if (!args) {
+        Py_DECREF(kwargs);
         return NULL;
     }
 
-    Py_DECREF(ma_module);
-    Py_DECREF(maArgs);
+    PyObject* maskedArray = PyObject_Call(ma_array_func, args, kwargs);
 
-    std::cout << "Made masked array\n";
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+
     return maskedArray;
 }
 
 PyObject* turingPyModule::vectorToList(std::vector<std::string>& vec) {
+    Profile profile {"turingPyModule::vectorToList"};
+
     PyObject* pyList = PyList_New(vec.size());
     if (!pyList) {
         return NULL;
@@ -111,7 +86,8 @@ PyObject* turingPyModule::vectorToList(std::vector<std::string>& vec) {
 }
 
 PyObject* turingPyModule::typedColumnToNumpyArray(turingClient::TypedColumn* typedCol, PyObject* backingData) {
-    import_array1(NULL);
+    Profile profile {"turingPyModule::typedColumnToNumpyArray"};
+
     switch (typedCol->columnType()) {
         case INT: {
             auto* col = static_cast<Column<int64_t>*>(typedCol);
@@ -138,6 +114,7 @@ PyObject* turingPyModule::typedColumnToNumpyArray(turingClient::TypedColumn* typ
                 Py_DECREF(dataArray);
                 return NULL;
             }
+
             Py_INCREF(backingData);
             PyArray_SetBaseObject((PyArrayObject*)dataArray, backingData);
             Py_INCREF(backingData);
@@ -154,7 +131,7 @@ PyObject* turingPyModule::typedColumnToNumpyArray(turingClient::TypedColumn* typ
                 1,
                 dims,
                 NPY_UINT64,
-                static_cast<uint64_t*>(col->data()));
+                (col->data()));
 
             if (!dataArray) {
                 return NULL;
@@ -242,6 +219,8 @@ PyObject* turingPyModule::typedColumnToNumpyArray(turingClient::TypedColumn* typ
 }
 
 PyObject* turingPyModule::typedColumnsToNumpyDictionary(std::vector<std::unique_ptr<TypedColumn>>* columns) {
+    Profile profile {"turingPyModule::typedColumnsToNumpyDictionary"};
+
     PyObject* backingData = PyCapsule_New(columns, NULL, destroyTypedColumns);
 
     if (!backingData) {

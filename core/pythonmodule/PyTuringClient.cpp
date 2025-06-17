@@ -1,24 +1,26 @@
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
-#include "PyTuringRequests.h"
+#include "PyTuringClient.h"
 
+#include "Profiler.h"
+#include "PyProfilerWrapper.h"
 #include "TypedColumn.h"
 #include "PyUtils.h"
 
 using namespace turingPyModule;
-PyObject* PyObject_TuringRequest_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-    import_array1(NULL);
-    PyObject_TuringRequests* self {};
+PyObject* PyObject_TuringClient_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+    PyObject_TuringClient* self {};
 
-    self = (PyObject_TuringRequests*)type->tp_alloc(type, 0);
+    self = (PyObject_TuringClient*)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->request = NULL;
     }
 
     return (PyObject*)self;
 }
-int PyObject_TuringRequest_init(PyObject_TuringRequests* self, PyObject* args) {
-    // Parse any constructor arguments
+int PyObject_TuringClient_init(PyObject_TuringClient* self, PyObject* args) {
+    Profile profile {"PyObject_TuringClient::init"};
+
     char* url {};
 
     if (!PyArg_ParseTuple(args, "s", &url)) {
@@ -28,25 +30,26 @@ int PyObject_TuringRequest_init(PyObject_TuringRequests* self, PyObject* args) {
     std::string urlString {url};
 
     try {
-        self->request = new turingClient::TuringRequest(urlString);
+        self->request = new turingClient::TuringClient(urlString);
     } catch (const std::exception& e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return -1;
     }
 
-    return 0; // Success
+    return 0;
 }
-void PyObject_TuringRequest_dealloc(PyObject_TuringRequests* self) {
+void PyObject_TuringClient_dealloc(PyObject_TuringClient* self) {
     if (self->request) {
         delete self->request;
         self->request = NULL;
     }
 
-    // Call the base type's dealloc
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
-PyObject* listAvailableGraphs(PyObject_TuringRequests* self) {
+PyObject* listAvailableGraphs(PyObject_TuringClient* self) {
+    Profile profile {"PyObject_TuringClient::listAvailableGraphs"};
+
     std::vector<std::string> availableGraphs;
     if (auto res = self->request->listAvailableGraphs(availableGraphs); !res) {
         PyErr_SetString(PyExc_RuntimeError, res.error().fmtMessage().c_str());
@@ -56,7 +59,9 @@ PyObject* listAvailableGraphs(PyObject_TuringRequests* self) {
     return vectorToList(availableGraphs);
 }
 
-PyObject* listLoadedGraphs(PyObject_TuringRequests* self) {
+PyObject* listLoadedGraphs(PyObject_TuringClient* self) {
+    Profile profile {"PyObject_TuringClient::listLoadedGraphs"};
+
     std::vector<std::string> availableGraphs;
     if (auto res = self->request->listLoadedGraphs(availableGraphs); !res) {
         PyErr_SetString(PyExc_RuntimeError, res.error().fmtMessage().c_str());
@@ -65,7 +70,9 @@ PyObject* listLoadedGraphs(PyObject_TuringRequests* self) {
 
     return vectorToList(availableGraphs);
 }
-PyObject* loadGraph(PyObject_TuringRequests* self, PyObject* args) {
+PyObject* loadGraph(PyObject_TuringClient* self, PyObject* args) {
+    Profile profile {"PyObject_TuringClient::loadGraph"};
+
     char* graph {};
     if (!PyArg_ParseTuple(args, "s", &graph)) {
         return NULL;
@@ -79,7 +86,9 @@ PyObject* loadGraph(PyObject_TuringRequests* self, PyObject* args) {
     return Py_None;
 }
 
-PyObject* query(PyObject_TuringRequests* self, PyObject* args, PyObject* kwargs) {
+PyObject* query(PyObject_TuringClient* self, PyObject* args, PyObject* kwargs) {
+    Profile profile {"PyObject_TuringClient::query"};
+
     char* query {};
     char* graph {};
 
@@ -95,4 +104,25 @@ PyObject* query(PyObject_TuringRequests* self, PyObject* args, PyObject* kwargs)
     }
 
     return typedColumnsToNumpyDictionary(queryResult);
+}
+
+PyObject* callProfilingWrapper(PyObject_TuringClient* self, PyObject* name) {
+    PyObject* attr = PyObject_GenericGetAttr((PyObject*)self, name);
+
+    if (attr == NULL) {
+        return NULL;
+    }
+
+    if (PyCallable_Check(attr)) {
+        PyProfilerWrapper* wrappedCall = PyObject_New(PyProfilerWrapper, &PyTypeObject_ProfilerWrapper);
+        if (wrappedCall == NULL) {
+            Py_DECREF(attr);
+            return NULL;
+        }
+
+        wrappedCall->originalMethod = attr;
+        return (PyObject*)wrappedCall;
+    }
+
+    return attr;
 }

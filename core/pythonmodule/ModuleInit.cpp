@@ -1,8 +1,11 @@
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <Python.h>
-#include <numpy/arrayobject.h>
+#define PY_ARRAY_UNIQUE_SYMBOL NPY_TuringDB
 
-#include "PyTuringRequests.h"
+#include <Python.h>
+#include <numpy/ndarrayobject.h>
+
+#include "PyProfilerWrapper.h"
+#include "PyTuringClient.h"
 
 static struct PyModuleDef turingmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
@@ -12,13 +15,17 @@ static struct PyModuleDef turingmodule = {
 };
 
 PyMODINIT_FUNC PyInit_turingdb_core_pymodule(void) {
-    // Initialize NumPy
     import_array1(NULL);
 
-    // Prepare the type
-    if (PyType_Ready(&PyTypeObject_TuringRequest) < 0) {
+    if (PyType_Ready(&PyTypeObject_TuringClient) < 0) {
         return NULL;
     }
+
+#ifdef TURING_PROFILE
+    if (PyType_Ready(&PyTypeObject_ProfilerWrapper) < 0) {
+        return NULL;
+    }
+#endif
 
     // Create the module
     PyObject* module = PyModule_Create(&turingmodule);
@@ -27,16 +34,12 @@ PyMODINIT_FUNC PyInit_turingdb_core_pymodule(void) {
     }
 
     // Add the type to the module
-    Py_INCREF(&PyTypeObject_TuringRequest);
-    if (PyModule_AddObject(module, "TuringRequest", (PyObject*)&PyTypeObject_TuringRequest) < 0) {
-        Py_DECREF(&PyTypeObject_TuringRequest);
+    Py_INCREF(&PyTypeObject_TuringClient);
+    if (PyModule_AddObject(module, "TuringClient", (PyObject*)&PyTypeObject_TuringClient) < 0) {
+        Py_DECREF(&PyTypeObject_TuringClient);
         Py_DECREF(module);
         return NULL;
     }
-
-    // Add module constants (optional)
-    // PyModule_AddStringConstant(module, "__version__", "1.0.0");
-    // PyModule_AddIntConstant(module, "DEFAULT_TIMEOUT", 30);
 
     return module;
 }

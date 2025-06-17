@@ -1,12 +1,12 @@
 import pandas as pd
-from .turingdb_core_pymodule import TuringRequest
+from .turingdb_core_pymodule import TuringClient
 
 class turingDB:
     """Python wrapper around the C++ TuringRequest class."""
     
     def __init__(self, url = "http://127.0.0.1:6666", graph = "default"):
         # Create the underlying C++ object
-        self._turing_client = TuringRequest(url)
+        self._turing_client = TuringClient(url)
         self._graph = graph
         self._url = url
     
