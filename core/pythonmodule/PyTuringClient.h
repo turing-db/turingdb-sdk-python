@@ -5,7 +5,7 @@
 
 typedef struct {
     PyObject_HEAD
-        turingClient::TuringClient* request;
+        turingClient::TuringClient* client;
 } PyObject_TuringClient;
 
 PyObject* PyObject_TuringClient_new(PyTypeObject* type, PyObject* args, PyObject* kwds);

@@ -13,7 +13,7 @@ PyObject* PyObject_TuringClient_new(PyTypeObject* type, PyObject* args, PyObject
 
     self = (PyObject_TuringClient*)type->tp_alloc(type, 0);
     if (self != NULL) {
-        self->request = NULL;
+        self->client = NULL;
     }
 
     return (PyObject*)self;
@@ -30,7 +30,7 @@ int PyObject_TuringClient_init(PyObject_TuringClient* self, PyObject* args) {
     std::string urlString {url};
 
     try {
-        self->request = new turingClient::TuringClient(urlString);
+        self->client = new turingClient::TuringClient(urlString);
     } catch (const std::exception& e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return -1;
@@ -39,9 +39,9 @@ int PyObject_TuringClient_init(PyObject_TuringClient* self, PyObject* args) {
     return 0;
 }
 void PyObject_TuringClient_dealloc(PyObject_TuringClient* self) {
-    if (self->request) {
-        delete self->request;
-        self->request = NULL;
+    if (self->client) {
+        delete self->client;
+        self->client = NULL;
     }
 
     Py_TYPE(self)->tp_free((PyObject*)self);
@@ -51,8 +51,8 @@ PyObject* listAvailableGraphs(PyObject_TuringClient* self) {
     Profile profile {"PyObject_TuringClient::listAvailableGraphs"};
 
     std::vector<std::string> availableGraphs;
-    if (auto res = self->request->listAvailableGraphs(availableGraphs); !res) {
-        PyErr_SetString(PyExc_RuntimeError, res.error().fmtMessage().c_str());
+    if (auto res = self->client->listAvailableGraphs(availableGraphs); !res) {
+        PyErr_SetString(PyExc_RuntimeError, self->client->getError().fmtMessage().c_str());
         return NULL;
     }
 
@@ -63,8 +63,8 @@ PyObject* listLoadedGraphs(PyObject_TuringClient* self) {
     Profile profile {"PyObject_TuringClient::listLoadedGraphs"};
 
     std::vector<std::string> availableGraphs;
-    if (auto res = self->request->listLoadedGraphs(availableGraphs); !res) {
-        PyErr_SetString(PyExc_RuntimeError, res.error().fmtMessage().c_str());
+    if (auto res = self->client->listLoadedGraphs(availableGraphs); !res) {
+        PyErr_SetString(PyExc_RuntimeError, self->client->getError().fmtMessage().c_str());
         return NULL;
     }
 
@@ -78,8 +78,8 @@ PyObject* loadGraph(PyObject_TuringClient* self, PyObject* args) {
         return NULL;
     }
 
-    if (auto res = self->request->loadGraph(graph); !res) {
-        PyErr_SetString(PyExc_RuntimeError, res.error().fmtMessage().c_str());
+    if (auto res = self->client->loadGraph(graph); !res) {
+        PyErr_SetString(PyExc_RuntimeError, self->client->getError().fmtMessage().c_str());
         return NULL;
     }
 
@@ -98,8 +98,8 @@ PyObject* query(PyObject_TuringClient* self, PyObject* args, PyObject* kwargs) {
 
     auto* queryResult = new std::vector<std::unique_ptr<turingClient::TypedColumn>>;
 
-    if (auto res = self->request->query(query, graph, *queryResult); !res) {
-        PyErr_SetString(PyExc_RuntimeError, res.error().fmtMessage().c_str());
+    if (auto res = self->client->query(query, graph, *queryResult); !res) {
+        PyErr_SetString(PyExc_RuntimeError, self->client->getError().fmtMessage().c_str());
         return NULL;
     }
 
