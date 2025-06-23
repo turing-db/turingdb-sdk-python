@@ -12,11 +12,10 @@ set_target_properties(turingdb_core_pymodule PROPERTIES
     SUFFIX "${Python_SOABI}${CMAKE_SHARED_LIBRARY_SUFFIX}"  # Proper Python extension suffix
 )
 
-# Link against Python libraries
-target_link_libraries(turingdb_core_pymodule PRIVATE Python3::Python)
-
-# Include Python header directories
-target_include_directories(turingdb_core_pymodule PRIVATE ${Python3_INCLUDE_DIRS})
+target_include_directories(turingdb_core_pymodule PRIVATE
+    ${PYTHON_INCLUDE_DIR}
+    ${NUMPY_INCLUDE_DIR}
+)
 
 target_link_libraries(turingdb_core_pymodule PRIVATE 
                      turing_client_cpp_s

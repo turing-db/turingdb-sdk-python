@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.6)
 
 project(python-turingdb)
 
+if(NOT PYTHON_INCLUDE_DIR)
+    message(FATAL_ERROR "PYTHON_INCLUDE_DIR must be provided")
+endif()
+
+if(NOT NUMPY_INCLUDE_DIR)
+    message(FATAL_ERROR "NUMPY_INCLUDE_DIR must be provided")
+endif()
+
+message(STATUS "Python include: ${PYTHON_INCLUDE_DIR}")
+message(STATUS "NumPy include: ${NUMPY_INCLUDE_DIR}")
+
 # Check of newlines at EOF
 message(STATUS "Checking for newlines at EOF")
 execute_process(
@@ -89,9 +100,6 @@ execute_process(
 
 # Threads
 find_package(Threads REQUIRED)
-
-# Python
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
 
 enable_testing()
 

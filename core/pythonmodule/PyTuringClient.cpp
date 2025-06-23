@@ -1,11 +1,9 @@
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <numpy/arrayobject.h>
 #include "PyTuringClient.h"
 
 #include "Profiler.h"
 #include "PyProfilerWrapper.h"
-#include "TypedColumn.h"
 #include "PyUtils.h"
+#include "TypedColumn.h"
 
 using namespace turingPyModule;
 PyObject* PyObject_TuringClient_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
