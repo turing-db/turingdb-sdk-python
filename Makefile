@@ -11,7 +11,11 @@ build: JOBS=$(filter -j%,$(MAKEFLAGS))
 build:
 	@echo "Setting Up Python Environment" 
 	@mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) \
-	&& uv venv --python 3.10.12 build_env \
+	&&if [ ! -d "build_env" ]; then \
+	echo "Creating Virtual Environment"; \
+	uv venv --python 3.10.12 build_env; \
+	else echo "Virtual Environment Already Exists, Skipping Creation"; \
+	fi \
 	&& source $(BUILD_DIR)/build_env/bin/activate \
 	&& uv pip install numpy==1.21.5 
 	@echo "Building Module"
