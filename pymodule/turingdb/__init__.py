@@ -17,6 +17,12 @@ class turingDB:
     def set_graph(self,graph):
         self._graph = graph
 
+    def set_auth_token(self,token):
+        return self._turing_client.set_auth_token(token)
+
+    def clear_auth_token(self):
+        return self._turing_client.clear_auth_token()
+
     def list_available_graphs(self):
         return self._turing_client.list_available_graphs()
 

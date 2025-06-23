@@ -59,16 +59,38 @@ PyObject* listAvailableGraphs(PyObject_TuringClient* self) {
     return vectorToList(availableGraphs);
 }
 
-PyObject* listLoadedGraphs(PyObject_TuringClient* self) {
-    Profile profile {"PyObject_TuringClient::listLoadedGraphs"};
+PyObject *setBearerToken(PyObject_TuringClient *self, PyObject *args) {
+  char *token{};
+  if (!PyArg_ParseTuple(args, "s", &token)) {
+    return NULL;
+  }
 
-    std::vector<std::string> availableGraphs;
-    if (auto res = self->client->listLoadedGraphs(availableGraphs); !res) {
-        PyErr_SetString(PyExc_RuntimeError, self->client->getError().fmtMessage().c_str());
-        return NULL;
-    }
+  if (auto res = self->client->setBearerToken(token); !res) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    self->client->getError().fmtMessage().c_str());
+    return NULL;
+  }
 
-    return vectorToList(availableGraphs);
+  return Py_None;
+}
+
+PyObject *clearBearerToken(PyObject_TuringClient *self) {
+  self->client->removeBearerToken();
+
+  return Py_None;
+}
+
+PyObject *listLoadedGraphs(PyObject_TuringClient *self) {
+  Profile profile{"PyObject_TuringClient::listLoadedGraphs"};
+
+  std::vector<std::string> availableGraphs;
+  if (auto res = self->client->listLoadedGraphs(availableGraphs); !res) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    self->client->getError().fmtMessage().c_str());
+    return NULL;
+  }
+
+  return vectorToList(availableGraphs);
 }
 PyObject* loadGraph(PyObject_TuringClient* self, PyObject* args) {
     Profile profile {"PyObject_TuringClient::loadGraph"};
