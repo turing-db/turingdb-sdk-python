@@ -1,7 +1,3 @@
-cmake_minimum_required(VERSION 3.6)
-
-project(python-turingdb)
-
 if(NOT PYTHON_INCLUDE_DIR)
     message(FATAL_ERROR "PYTHON_INCLUDE_DIR must be provided")
 endif()
