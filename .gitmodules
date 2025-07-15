@@ -1,3 +1,4 @@
 [submodule "turingdb-client-cpp"]
-	path = native
+	path = core/native
 	url = git@gitlab.turing.bio:turing/turingdb-client-cpp.git
+	branch = main
