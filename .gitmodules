@@ -1,0 +1,3 @@
+[submodule "core/native"]
+	path = core/native
+	url = https://github.com/turing-db/turingdb-sdk-cpp.git
