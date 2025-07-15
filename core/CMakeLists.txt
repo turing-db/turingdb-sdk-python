@@ -2,11 +2,16 @@ if(NOT PYTHON_INCLUDE_DIR)
     message(FATAL_ERROR "PYTHON_INCLUDE_DIR must be provided")
 endif()
 
+if(NOT PYTHON_LIB_DIR)
+    message(FATAL_ERROR "PYTHON_LIB_DIR must be provided")
+endif()
+
 if(NOT NUMPY_INCLUDE_DIR)
     message(FATAL_ERROR "NUMPY_INCLUDE_DIR must be provided")
 endif()
 
 message(STATUS "Python include: ${PYTHON_INCLUDE_DIR}")
+message(STATUS "Python lib: ${PYTHON_LIB_DIR}")
 message(STATUS "NumPy include: ${NUMPY_INCLUDE_DIR}")
 
 # Check of newlines at EOF

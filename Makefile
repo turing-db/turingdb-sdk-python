@@ -3,6 +3,7 @@ SHELL := /bin/bash
 BUILD_ENV=
 BUILD_DIR=$(abspath build_package)
 SRC_DIR=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+TURING_HOME=$(abspath turing_install)
 
 all: build
 
@@ -23,15 +24,11 @@ build:
 	&& source build_env/bin/activate \
 	&& export NUMPY_INCLUDE=$$(python -c "import numpy; print(numpy.get_include())") \
 	&& export PYTHON_INCLUDE=$$(python -c "import sysconfig; print(sysconfig.get_path('include'))") \
+	&& export PYTHON_LIB=$$(python -c "import pathlib; print(pathlib.Path('$$PYTHON_INCLUDE').parent.parent.absolute())")/lib \
 	&& mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) \
-	&& date +%s > .build_start \
-	&& $(BUILD_ENV) cmake -DPYTHON_INCLUDE_DIR=$$PYTHON_INCLUDE -DNUMPY_INCLUDE_DIR=$$NUMPY_INCLUDE -DCMAKE_INSTALL_PREFIX=$(TURING_HOME) $(SRC_DIR) \
+	&& $(BUILD_ENV) cmake -DPYTHON_INCLUDE_DIR=$$PYTHON_INCLUDE -DPYTHON_LIB_DIR=$$PYTHON_LIB -DNUMPY_INCLUDE_DIR=$$NUMPY_INCLUDE -DCMAKE_INSTALL_PREFIX=$(TURING_HOME) $(SRC_DIR) \
 	&& make -s $(JOBS) \
-	&& make install \
-	&& uv build $(BUILD_DIR)/pymodule --out-dir $(TURING_HOME)/lib/turingdb_PyModule --wheel \
-	&& date +%s > .build_end \
-	&& echo $$(expr $$(cat .build_end) - $$(cat .build_start)) > .build_time \
-	&& echo "Build passed in $$(cat .build_time) seconds."
+	&& uv build $(BUILD_DIR)/pymodule --out-dir $(TURING_HOME)/lib/turingdb --wheel
 
 .PHONY: debug
 debug: BUILD_ENV += DEBUG_BUILD=1

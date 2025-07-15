@@ -18,8 +18,11 @@ target_include_directories(turingdb_core_pymodule PRIVATE
 )
 
 target_link_libraries(turingdb_core_pymodule PRIVATE 
-                     turing_client_cpp_s
-                     turing_common_s)
+                      turing_client_cpp_s
+                      turing_common_s
+                      python3.10)
+
+target_link_directories(turingdb_core_pymodule PRIVATE ${PYTHON_LIB_DIR})
 
 add_custom_command(TARGET turingdb_core_pymodule POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
