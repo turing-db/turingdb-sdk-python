@@ -12,7 +12,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install UV
+      run: wget -qO- https://astral.sh/uv/install.sh | sh
+    
     - uses: actions/checkout@v4
+      with:
+            # Fetch submodules using the built-in token over HTTPS
+            submodules: recursive
+            # Ensure credentials are set for submodule fetches
+            persist-credentials: true
+
+    - name: Install C++ SDK dependencies
+      run: core/native/dependencies.sh
 
     - name: Build
       run: make
