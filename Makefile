@@ -28,7 +28,14 @@ build:
 	&& mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) \
 	&& $(BUILD_ENV) cmake -DPYTHON_INCLUDE_DIR=$$PYTHON_INCLUDE -DPYTHON_LIB_DIR=$$PYTHON_LIB -DNUMPY_INCLUDE_DIR=$$NUMPY_INCLUDE -DCMAKE_INSTALL_PREFIX=$(TURING_HOME) $(SRC_DIR) \
 	&& make -s $(JOBS) \
-	&& uv build $(BUILD_DIR)/pymodule --out-dir $(TURING_HOME)/lib/turingdb --wheel
+	&& uv build $(BUILD_DIR)/pymodule --out-dir $(TURING_HOME)/lib/turingdb --wheel \
+	&& ls -t $(TURING_HOME)/lib/turingdb/*.whl | head -1 > $(BUILD_DIR)/wheel_path.txt
+	@echo "Testing Module"
+	@cd $(BUILD_DIR) \
+	&& uv venv --python 3.10.12 test_env \
+	&& source $(BUILD_DIR)/test_env/bin/activate \
+	&& uv pip install "$$(cat $(BUILD_DIR)/wheel_path.txt)" \
+	&& python3 -c "from turingdb import turingDB"
 
 .PHONY: debug
 debug: BUILD_ENV += DEBUG_BUILD=1

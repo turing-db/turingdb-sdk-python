@@ -27,3 +27,6 @@ jobs:
 
     - name: Build
       run: make
+
+    - name: Check Module
+      run : 
