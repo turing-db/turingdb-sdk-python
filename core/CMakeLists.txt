@@ -29,6 +29,7 @@ set(CLANG_NEEDED_VERSION "9.4.0")
 
 # C++ standard
 set(CPP_STANDARD "c++20")
+Set(CMAKE_CXX_STANDARD 20)
 
 # C++ warning flags
 set(CPP_WARNINGS "-Wall -Werror -Wunused-function -Wunused-variable")
