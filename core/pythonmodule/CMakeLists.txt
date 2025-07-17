@@ -9,7 +9,7 @@ target_include_directories(turingdb_core_pymodule PRIVATE ${CMAKE_CURRENT_SOURCE
 
 set_target_properties(turingdb_core_pymodule PROPERTIES
     PREFIX ""                   # No 'lib' prefix on the output
-    SUFFIX "${Python_SOABI}${CMAKE_SHARED_LIBRARY_SUFFIX}"  # Proper Python extension suffix
+    SUFFIX "${Python_SOABI}.so"  # Proper Python extension suffix
 )
 
 target_include_directories(turingdb_core_pymodule PRIVATE
