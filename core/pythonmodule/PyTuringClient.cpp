@@ -78,6 +78,27 @@ PyObject *clearBearerToken(PyObject_TuringClient *self) {
   return Py_None;
 }
 
+PyObject *setInstanceId(PyObject_TuringClient *self, PyObject *args) {
+  char *instanceId{};
+  if (!PyArg_ParseTuple(args, "s", &instanceId)) {
+    return NULL;
+  }
+
+  if (auto res = self->client->setInstanceId(instanceId); !res) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    self->client->getError().fmtMessage().c_str());
+    return NULL;
+  }
+
+  return Py_None;
+}
+
+PyObject *clearInstanceId(PyObject_TuringClient *self) {
+  self->client->removeInstanceId();
+
+  return Py_None;
+}
+
 PyObject *listLoadedGraphs(PyObject_TuringClient *self) {
   Profile profile{"PyObject_TuringClient::listLoadedGraphs"};
 
