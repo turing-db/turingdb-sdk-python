@@ -4,14 +4,18 @@ from .turingdb_core_pymodule import TuringClient
 class turingDB:
     """Python SDK Class To Connect To And Interact With A TuringDB Instance"""
 
-    def __init__(self, url = "http://127.0.0.1:6666", graph = "default", auth_token = ""):
+    def __init__(self, url = "http://127.0.0.1:6666", graph = "default", auth_token = "", instance_id = ""):
         # Create the underlying C++ object
         self._turing_client = TuringClient(url)
         self._graph = graph
         self._url = url
         self._auth_token = auth_token
+        self._instance_id = instance_id
+
         if auth_token:
             self._turing_client.set_auth_token(self._auth_token)
+        if instance_id:
+            self._turing_client.set_turing_instance(self._instance_id)
 
     def load_graph(self,graph):
         """Load a graph from the available graph list onto the turingDB engine"""
@@ -30,6 +34,17 @@ class turingDB:
     def clear_auth_token(self):
         """Remove the authtentication token from requests being sent to the engines"""
         return self._turing_client.clear_auth_token()
+
+    def set_turing_instance(self,instance_id):
+        """Set a turing engine cloud instance to route your requests to the 
+        correct turingDB engine. Running this function repeatedly will reset the
+        Turing Instance Id accordingly"""
+        self._instance_id= instance_id
+        return self._turing_client.set_turing_instance(self._instance_id)
+
+    def clear_turing_instance(self):
+        """Remove the Turing intsance id from requests being sent to the engines"""
+        return self._turing_client.clear_turing_instance()
 
     def list_available_graphs(self):
         """List all the available graphs that a turingDB engine can load and query"""

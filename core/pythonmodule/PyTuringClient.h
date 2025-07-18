@@ -19,6 +19,9 @@ PyObject *loadGraph(PyObject_TuringClient *self, PyObject *args);
 PyObject *setBearerToken(PyObject_TuringClient *self, PyObject *args);
 PyObject *clearBearerToken(PyObject_TuringClient *self);
 
+PyObject *setInstanceId(PyObject_TuringClient *self, PyObject *args);
+PyObject *clearInstanceId(PyObject_TuringClient *self);
+
 PyObject *query(PyObject_TuringClient *self, PyObject *args, PyObject *kwargs);
 
 PyObject *callProfilingWrapper(PyObject_TuringClient *self, PyObject *name);
@@ -32,6 +35,10 @@ static PyMethodDef PyObject_TuringClient_Methods[] = {
     {"set_auth_token", (PyCFunction)setBearerToken, METH_VARARGS,
      "Set The Auth Token For Requests"},
     {"clear_auth_token", (PyCFunction)clearBearerToken, METH_NOARGS,
+     "Clear The Turing Instance For Requests"},
+    {"set_turing_instance", (PyCFunction)setInstanceId, METH_VARARGS,
+     "Set The Turing Instance For Requests"},
+    {"clear_turing_instance", (PyCFunction)clearInstanceId, METH_NOARGS,
      "Clear The Auth Token For Requests"},
     {"query", (PyCFunction)query, METH_VARARGS, "Send Query To A Graph"},
     {NULL} // Sentinel
