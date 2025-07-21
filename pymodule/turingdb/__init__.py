@@ -35,14 +35,14 @@ class turingDB:
         """Remove the authtentication token from requests being sent to the engines"""
         return self._turing_client.clear_auth_token()
 
-    def set_turing_instance(self,instance_id):
+    def set_instance(self,instance_id):
         """Set a turing engine cloud instance to route your requests to the 
         correct turingDB engine. Running this function repeatedly will reset the
         Turing Instance Id accordingly"""
         self._instance_id= instance_id
         return self._turing_client.set_turing_instance(self._instance_id)
 
-    def clear_turing_instance(self):
+    def clear_instance(self):
         """Remove the Turing intsance id from requests being sent to the engines"""
         return self._turing_client.clear_turing_instance()
 
