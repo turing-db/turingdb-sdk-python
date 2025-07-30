@@ -1,16 +1,9 @@
 name: CI Ubuntu
 
 on:
-  push: # Can be triggered by pushing  a new tag
+  pull_request: # Can be triggered by pushing  a new tag
     tags:
       - 'v*'
-
-  workflow_dispatch: # Can be triggered manually in the GitHub UI
-    inputs:
-      test_release:
-        description: 'Test release build'
-        required: false
-        default: 'true'
 
 jobs:
   build:
