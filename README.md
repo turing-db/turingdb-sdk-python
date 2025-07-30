@@ -3,6 +3,5 @@
 
 ## How to build
 ```bash
-mkdir -p build
-cd build && make -f ../Makefile
+make PYTHON_VERSION="3.9 3.10 3.11 3.12 3.13"
 ```
