@@ -2,3 +2,7 @@ compile_commands.json
 *.swp
 *.swo
 build
+build_package
+test_env
+build_env
+

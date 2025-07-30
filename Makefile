@@ -1,62 +1,47 @@
 SHELL := /bin/bash
-
 BUILD_ENV=
 BUILD_DIR=$(abspath build_package)
 SRC_DIR=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 INSTALL_DIR=$(abspath install)
 
-all: build
+# Default Python version if not specified
+PYTHON_VERSION ?= 3.10
 
+all: build
 .PHONY: build
-build: JOBS=$(filter -j%,$(MAKEFLAGS))
 build:
-	@echo "Setting Up Python Environment" 
-	@mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) \
-	&&if [ ! -d "build_env" ]; then \
-	echo "Creating Virtual Environment"; \
-	uv venv --python 3.10.12 build_env; \
-	else echo "Virtual Environment Already Exists, Skipping Creation"; \
-	fi \
-	&& source $(BUILD_DIR)/build_env/bin/activate \
-	&& uv pip install numpy==1.21.5 
-	@echo "Building Module"
-	@cd $(BUILD_DIR) \
-	&& source build_env/bin/activate \
-	&& export NUMPY_INCLUDE=$$(python -c "import numpy; print(numpy.get_include())") \
-	&& export PYTHON_INCLUDE=$$(python -c "import sysconfig; print(sysconfig.get_path('include'))") \
-	&& export PYTHON_LIB=$$(python -c "import pathlib; print(pathlib.Path('$$PYTHON_INCLUDE').parent.parent.absolute())")/lib \
-	&& mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) \
-	&& $(BUILD_ENV) cmake -DPYTHON_INCLUDE_DIR=$$PYTHON_INCLUDE -DPYTHON_LIB_DIR=$$PYTHON_LIB -DNUMPY_INCLUDE_DIR=$$NUMPY_INCLUDE -DCMAKE_INSTALL_PREFIX=$(INSTALL_DIR) $(SRC_DIR) \
-	&& make -s $(JOBS) \
-	&& uv build $(BUILD_DIR)/pymodule --out-dir $(INSTALL_DIR)/lib/turingdb --wheel \
-	&& ls -t $(INSTALL_DIR)/lib/turingdb/*.whl | head -1 > $(BUILD_DIR)/wheel_path.txt
-	@echo "Testing Module"
-	@cd $(BUILD_DIR) \
-	&& uv venv --python 3.10.12 test_env \
-	&& source $(BUILD_DIR)/test_env/bin/activate \
-	&& uv pip install "$$(cat $(BUILD_DIR)/wheel_path.txt)" \
-	&& python3 -c "from turingdb import turingDB"
+	./scripts/build_with_version.sh $(PYTHON_VERSION) 8
+
+.PHONY: build_many
+build_many:
+	@if [ -z "$(PYTHON_VERSIONS)" ]; then \
+		echo "Error: PYTHON_VERSIONS not specified. Usage: make build_many PYTHON_VERSIONS='3.9 3.10 3.11'"; \
+		exit 1; \
+	fi
+	@for version in $(PYTHON_VERSIONS); do \
+		echo "Building with Python $$version"; \
+		$(MAKE) clean; \
+		$(MAKE) build PYTHON_VERSION=$$version; \
+	done
 
 .PHONY: debug
 debug: BUILD_ENV += DEBUG_BUILD=1
 debug: build
-
 .PHONY: reldebug
 reldebug: BUILD_ENV += RELDEBUG=1
 reldebug: build
-
 .PHONY: callgrind
 callgrind: BUILD_ENV += CALLGRIND_PROFILE=1
 callgrind: build
-
 .PHONY: clean
 clean:
-
+	rm -rf $(BUILD_DIR)
+	rm -rf build_env
+	rm -rf test_env
 check-env:
 ifndef TURING_HOME
 	$(error TURING_HOME is not defined, please configure your environment.)
 endif
-
 .PHONY: test
 test:
 	cd $(BUILD_DIR) && ctest --output-on-failure --output-junit ../unit_tests.xml --force-new-ctest-process
