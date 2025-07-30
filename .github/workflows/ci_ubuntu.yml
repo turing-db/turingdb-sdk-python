@@ -1,20 +1,34 @@
 name: CI Ubuntu
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  pull_request: # Can be triggered by pushing  a new tag
+    tags:
+      - 'v*'
 
 jobs:
   build:
+    strategy:
+      matrix:
+        include:
+          # Linux builds
+          - os: ubuntu-latest
+            arch: x64
+            target: linux
 
-    runs-on: ubuntu-latest
+          # macOS builds
+          - os: macos-latest
+            arch: arm64
+            target: macos-arm64
+          - os: macos-13  # Intel Mac
+            arch: x64
+            target: macos-x64
+
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Install UV
       run: wget -qO- https://astral.sh/uv/install.sh | sh
-    
+
     - uses: actions/checkout@v4
       with:
             # Fetch submodules using the built-in token over HTTPS
@@ -27,3 +41,34 @@ jobs:
 
     - name: Build
       run: make
+
+    - name: Upload all wheels
+      uses: actions/upload-artifact@v4
+      with:
+        name: wheels-${{ matrix.target }}
+        path: install/lib/turingdb/*.whl
+        retention-days: 1
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: wheels/
+
+    - name: Flatten wheel directory
+      run: |
+        mkdir -p dist
+        find wheels/ -name "*.whl" -exec cp {} dist/ \;
+        ls -la dist/
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*.whl
+        draft: false
+        prerelease: false
