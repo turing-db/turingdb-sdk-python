@@ -1,6 +1,7 @@
 compile_commands.json
 *.swp
 *.swo
+.cache
 build
 build_package
 test_env

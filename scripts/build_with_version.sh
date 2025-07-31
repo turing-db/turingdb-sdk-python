@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 CURRENT_DIR=$(dirname "$(realpath "$0")")
-ROOT_DIR="$CURRENT_DIR/../"
+ROOT_DIR="$CURRENT_DIR/.."
 
 ENV_DIR="$ROOT_DIR"/build_env
 BUILD_DIR="$ROOT_DIR/build_package"
@@ -17,6 +17,17 @@ fi
 if [ -z "$JOBS" ]; then
 	JOBS=4
 fi
+
+if [ -z "$CC" ]; then
+	CC=clang
+fi
+
+if [ -z "$CXX" ]; then
+	CXX=clang++
+fi
+
+echo "- C Compiler: $CC"
+echo "- C++ Compiler: $CXX"
 
 echo "Setting Up Python Environment"
 mkdir -p $BUILD_DIR
@@ -38,7 +49,8 @@ echo "PYTHON_LIB: $PYTHON_LIB"
 
 cmake -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE \
       -DPYTHON_LIB_DIR=$PYTHON_LIB \
-      -DCMAKE_CXX_COMPILER=clang++ \
+      -DCMAKE_C_COMPILER="$CC" \
+      -DCMAKE_CXX_COMPILER="$CXX" \
       -DPYTHON_VERSION=$PYTHON_VERSION \
       -DNUMPY_INCLUDE_DIR=$NUMPY_INCLUDE \
       -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
