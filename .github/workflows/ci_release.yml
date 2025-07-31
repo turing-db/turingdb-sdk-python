@@ -22,10 +22,25 @@ jobs:
             arch: x64
             target: linux
 
+          # macOS builds
+          - os: macos-latest
+            arch: x64
+            target: macos
+
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Install LLVM and Clang
+    - name: Install LLVM and Clang (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install llvm@20
+        echo "CC=$(brew --prefix llvm@20)/bin/clang" >> $GITHUB_ENV
+        echo "CXX=$(brew --prefix llvm@20)/bin/clang++" >> $GITHUB_ENV
+        echo "LLVM_PATH=$(brew --prefix llvm@20)" >> $GITHUB_ENV
+        echo "$(brew --prefix llvm@20)/bin" >> $GITHUB_PATH
+
+    - name: Install LLVM and Clang (non-macOS)
+      if: runner.os != 'macOS'
       uses: KyleMayes/install-llvm-action@v2
       with:
         version: "20.1.4"
