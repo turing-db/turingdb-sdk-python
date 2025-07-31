@@ -1,61 +1,17 @@
 name: CI Ubuntu
 
 on:
-  push: # Can be triggered by pushing  a new tag
-    tags:
-      - 'v*'
-
-  workflow_dispatch: # Can be triggered manually in the GitHub UI
-    inputs:
-      test_release:
-        description: 'Test release build'
-        required: false
-        default: 'true'
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
-    strategy:
-      matrix:
-        include:
-          # Linux builds
-          - os: ubuntu-latest
-            arch: x64
-            target: linux
 
-          # macOS builds
-          - os: macos-latest
-            arch: x64
-            target: macos
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Install LLVM and Clang (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew install llvm@20
-        echo "CC=$(brew --prefix llvm@20)/bin/clang" >> $GITHUB_ENV
-        echo "CXX=$(brew --prefix llvm@20)/bin/clang++" >> $GITHUB_ENV
-        echo "LLVM_PATH=$(brew --prefix llvm@20)" >> $GITHUB_ENV
-        echo "$(brew --prefix llvm@20)/bin" >> $GITHUB_PATH
-
-    - name: Install LLVM and Clang (non-macOS)
-      if: runner.os != 'macOS'
-      uses: KyleMayes/install-llvm-action@v2
-      with:
-        version: "20.1.4"
-        cached: false
-        env: true
-        directory: ${{ runner.temp }}/llvm
-
-    - name: Verify LLVM installation
-      run: |
-        echo "=== Test clang execution ==="
-        $LLVM_PATH/bin/clang --version
-        echo "=== Test clang++ execution ==="
-        $LLVM_PATH/bin/clang++ --version
-
-
     - name: Install UV
       run: wget -qO- https://astral.sh/uv/install.sh | sh
     
@@ -70,35 +26,4 @@ jobs:
       run: core/native/dependencies.sh
 
     - name: Build
-      run: make build_many PYTHON_VERSIONS="3.10 3.11 3.12 3.13"
-
-    - name: Upload all wheels
-      uses: actions/upload-artifact@v4
-      with:
-        name: wheels-${{ matrix.target }}
-        path: install/lib/turingdb/*.whl
-        retention-days: 1
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    
-    steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: wheels/
-    
-    - name: Flatten wheel directory
-      run: |
-        mkdir -p dist
-        find wheels/ -name "*.whl" -exec cp {} dist/ \;
-        ls -la dist/
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: dist/*.whl
-        draft: false
-        prerelease: false
+      run: make
