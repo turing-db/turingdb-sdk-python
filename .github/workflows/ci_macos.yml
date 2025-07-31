@@ -9,11 +9,19 @@ on:
 jobs:
   build:
 
-    runs-on: macos-15-large
+    runs-on: macos-latest-xlarge
 
     steps:
     - name: Install UV
       run: wget -qO- https://astral.sh/uv/install.sh | sh
+
+    - name: Install LLVM and recent clang
+      run: |
+        brew install llvm@20
+        echo "CC=$(brew --prefix llvm@20)/bin/clang" >> $GITHUB_ENV
+        echo "CXX=$(brew --prefix llvm@20)/bin/clang++" >> $GITHUB_ENV
+        echo "LLVM_PATH=$(brew --prefix llvm@20)" >> $GITHUB_ENV
+        echo "$(brew --prefix llvm@20)/bin" >> $GITHUB_PATH
 
     - uses: actions/checkout@v4
       with:
