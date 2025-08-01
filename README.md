@@ -1,5 +1,6 @@
 # TuringDB Python SDK
-[![CI Ubuntu](https://github.com/turing-db/turingdb-sdk-python/actions/workflows/ci.yml/badge.svg)](https://github.com/turing-db/turingdb-sdk-python/actions/workflows/ci.yml)
+[![CI Ubuntu](https://github.com/turing-db/turingdb-sdk-python/actions/workflows/ci_ubuntu.yml/badge.svg)](https://github.com/turing-db/turingdb-sdk-python/actions/workflows/ci_ubuntu.yml)
+[![CI macos](https://github.com/turing-db/turingdb-sdk-python/actions/workflows/ci_macos.yml/badge.svg)](https://github.com/turing-db/turingdb-sdk-python/actions/workflows/ci_macos.yml)
 
 ## How to build
 ```bash
