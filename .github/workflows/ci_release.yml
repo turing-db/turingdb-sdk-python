@@ -1,4 +1,4 @@
-name: CI Ubuntu
+name: CI Release
 
 on:
   push: # Can be triggered by pushing  a new tag
