@@ -1,9 +1,9 @@
 # .github/workflows/build.yml
-name: CI macos ARM
+name: CI Ubuntu
 
 jobs:
   build:
-    runs-on: macos-latest-xlarge
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
