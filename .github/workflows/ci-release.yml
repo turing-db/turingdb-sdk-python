@@ -1,3 +1,4 @@
+# .github/workflows/build.yml
 name: Build and Release
 
 on:
@@ -34,8 +35,21 @@ jobs:
           name: python-package-distributions-${{ matrix.python-version }}
           path: dist/
 
+  release:
+    needs: build # Wait for all build jobs to complete
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to create GitHub releases
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: python-package-distributions-*
+          path: dist/
+          merge-multiple: true
+
       - name: Create GitHub Release
-        if: matrix.python-version == '3.13'
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
