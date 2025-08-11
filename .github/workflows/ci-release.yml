@@ -38,8 +38,12 @@ jobs:
   release:
     needs: build # Wait for all build jobs to complete
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/turingdb
     permissions:
       contents: write # Required to create GitHub releases
+      id-token: write
 
     steps:
       - name: Download all artifacts
@@ -56,3 +60,6 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
