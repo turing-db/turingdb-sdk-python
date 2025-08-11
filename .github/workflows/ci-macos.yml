@@ -1,5 +1,11 @@
 name: CI macos ARM
 
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
 jobs:
   build:
     runs-on: macos-latest-xlarge
