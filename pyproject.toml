@@ -18,14 +18,16 @@ Repository = "https://github.com/turing-db/turingdb-sdk-python"
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.targets.wheel]
-include = ["src/turingdb/**/*.py", "src/turingdb/**/*.pyi"]
-
 [tool.hatch.version]
 source = "vcs"
 
+[tool.uv.workspace]
+members = [
+    "testapp",
+]
+
 [tool.hatch.build.hooks.vcs]
-version-file = "src/turingdb/_version.py"
+version-file = "_version.py"
 
 [dependency-groups]
 dev = [
