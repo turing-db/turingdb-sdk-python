@@ -12,7 +12,6 @@ class TuringDB:
         "Content-Type": "application/json",
     }
 
-
     def __init__(
         self,
         instance_id: str = "",
@@ -38,14 +37,11 @@ class TuringDB:
         if auth_token != "":
             self._headers["Authorization"] = f"Bearer {auth_token}"
 
-
     def list_available_graphs(self) -> list[str]:
         return self._send_request("list_avail_graphs")["data"]
 
-
     def list_loaded_graphs(self) -> list[str]:
         return self._send_request("list_loaded_graphs")["data"][0][0]
-
 
     def load_graph(self, graph_name: str, raise_if_loaded: bool = True):
         try:
@@ -54,10 +50,8 @@ class TuringDB:
             if raise_if_loaded or e.__str__() != "GRAPH_ALREADY_EXISTS":
                 raise e
 
-
     def create_graph(self, graph_name: str):
         return self.query(f"create graph {graph_name}")
-
 
     def query(self, query: str):
         json = self._send_request("query", data=query, params=self._params)
@@ -67,16 +61,15 @@ class TuringDB:
 
         return self._parse_chunks(json)
 
-
     def set_commit(self, commit: str):
         self._params["commit"] = commit
 
-
-    def set_change(self, change: str):
+    def set_change(self, change: int | str):
+        if isinstance(change, int):
+            change = f"{change:x}"
         self._params["change"] = change
 
-
-    def checkout(self, change: str = "main", commit: str = "HEAD"):
+    def checkout(self, change: int | str = "main", commit: str = "HEAD"):
         if change == "main":
             if "change" in self._params:
                 del self._params["change"]
@@ -89,10 +82,8 @@ class TuringDB:
         else:
             self.set_commit(commit)
 
-
     def set_graph(self, graph_name: str):
         self._params["graph"] = graph_name
-
 
     def _send_request(
         self,
@@ -126,7 +117,6 @@ class TuringDB:
 
         return json
 
-
     def _parse_chunks(self, json: dict):
         import pandas as pd
         import numpy as np
@@ -159,4 +149,3 @@ class TuringDB:
         arrays = [np.array(columns[i], dtype=dtypes[i]) for i in range(len(columns))]
 
         return pd.DataFrame(dict(zip(column_names, arrays)), index=None)
-
