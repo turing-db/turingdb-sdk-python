@@ -1,3 +1,3 @@
-from .TuringDB import TuringDB, TuringDBException
+from .turingdb import TuringDB, TuringDBException
 
 __all__ = ["TuringDB", "TuringDBException"]
