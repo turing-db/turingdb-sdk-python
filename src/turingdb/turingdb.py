@@ -113,6 +113,9 @@ class TuringDB:
         if isinstance(json, dict):
             err = json.get("error")
             if err is not None:
+                details = json.get("error_details")
+                if details is not None:
+                    err = f"{err}: {details}"
                 raise TuringDBException(err)
 
         return json
