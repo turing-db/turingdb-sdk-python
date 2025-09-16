@@ -17,13 +17,13 @@ class TuringDB:
         instance_id: str = "",
         auth_token: str = "",
         host: str = "https://engines.turingdb.ai/sdk",
+        timeout: Optional[int] = None,
     ):
         import httpx
         import copy
 
         self.host = host
-
-        self._client = httpx.Client(auth=None, verify=False)
+        self._client = httpx.Client(auth=None, verify=False, timeout=timeout)
 
         self._params = {
             "graph": "default",
