@@ -1,5 +1,7 @@
 from typing import Optional
 
+import time
+
 
 class TuringDBException(Exception):
     def __init__(self, message: str):
@@ -23,7 +25,16 @@ class TuringDB:
         import copy
 
         self.host = host
-        self._client = httpx.Client(auth=None, verify=False, timeout=timeout)
+        self._client = httpx.Client(
+            auth=None,
+            verify=False,
+            timeout=timeout,
+        )
+        self._query_exec_time = None
+        self._total_exec_time = None
+        self._t0 = 0
+        self._t1 = 0
+        self._timeout = timeout
 
         self._params = {
             "graph": "default",
@@ -36,6 +47,16 @@ class TuringDB:
 
         if auth_token != "":
             self._headers["Authorization"] = f"Bearer {auth_token}"
+
+    def try_reach(self, timeout: int = 5):
+        self._client.timeout = timeout
+        self.list_available_graphs()
+        self._client.timeout = self._timeout
+
+    def warmup(self, timeout: int = 5):
+        self._client.timeout = timeout
+        self.query("LIST GRAPH")
+        self._client.timeout = self._timeout
 
     def list_available_graphs(self) -> list[str]:
         return self._send_request("list_avail_graphs")["data"]
@@ -85,6 +106,9 @@ class TuringDB:
     def set_graph(self, graph_name: str):
         self._params["graph"] = graph_name
 
+    def get_graph(self) -> str:
+        return self._params["graph"]
+
     def _send_request(
         self,
         path: str,
@@ -92,6 +116,10 @@ class TuringDB:
         params: Optional[dict] = None,
     ):
         import orjson
+
+        self._query_exec_time = None
+        self._total_exec_time = None
+        self._t0 = time.time()
 
         if data is None:
             data = ""
@@ -118,6 +146,9 @@ class TuringDB:
                     err = f"{err}: {details}"
                 raise TuringDBException(err)
 
+        self._t1 = time.time()
+        self._total_exec_time = (self._t1 - self._t0) * 1000
+
         return json
 
     def _parse_chunks(self, json: dict):
@@ -129,6 +160,8 @@ class TuringDB:
         column_types: list[str] = data_header["column_types"]
         dtypes: list[np.dtype] = []
         columns: list[list] = []
+
+        self._query_exec_time = json["time"]
 
         for chunk in json["data"]:
             for i, col in enumerate(chunk):
@@ -151,4 +184,12 @@ class TuringDB:
 
         arrays = [np.array(columns[i], dtype=dtypes[i]) for i in range(len(columns))]
 
+        self._t1 = time.time()
+        self._total_exec_time = (self._t1 - self._t0) * 1000
         return pd.DataFrame(dict(zip(column_names, arrays)), index=None)
+
+    def get_query_exec_time(self) -> Optional[float]:
+        return self._query_exec_time
+
+    def get_total_exec_time(self) -> Optional[float]:
+        return self._total_exec_time
