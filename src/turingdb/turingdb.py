@@ -64,6 +64,9 @@ class TuringDB:
     def list_loaded_graphs(self) -> list[str]:
         return self._send_request("list_loaded_graphs")["data"][0][0]
 
+    def is_graph_loaded(self) -> bool:
+        return self._send_request("is_graph_loaded", params={"graph": self.get_graph()})["data"]
+
     def load_graph(self, graph_name: str, raise_if_loaded: bool = True):
         try:
             return self._send_request("load_graph", params={"graph": graph_name})
@@ -155,10 +158,6 @@ class TuringDB:
         import pandas as pd
         import numpy as np
 
-        data_header = json["header"]
-        column_names: list[str] = data_header["column_names"]
-        column_types: list[str] = data_header["column_types"]
-        dtypes: list[np.dtype] = []
         columns: list[list] = []
 
         self._query_exec_time = json["time"]
@@ -166,27 +165,16 @@ class TuringDB:
         for chunk in json["data"]:
             for i, col in enumerate(chunk):
                 if i >= len(columns):
-                    match column_types[i]:
-                        case "String":
-                            dtypes.append(np.dtype(np.dtypes.StringDType))
-                        case "Int64":
-                            dtypes.append(np.dtype(np.dtypes.Int64DType))
-                        case "UInt64":
-                            dtypes.append(np.dtype(np.dtypes.UInt64DType))
-                        case "Double":
-                            dtypes.append(np.dtype(np.dtypes.Float64DType))
-                        case "Boolean":
-                            dtypes.append(np.dtype(np.dtypes.BoolDType))
-
                     columns.append([])
 
                 columns[i] = columns[i] + col
 
-        arrays = [np.array(columns[i], dtype=dtypes[i]) for i in range(len(columns))]
+        arrays = [np.array(columns[i]) for i in range(len(columns))]
 
         self._t1 = time.time()
         self._total_exec_time = (self._t1 - self._t0) * 1000
-        return pd.DataFrame(dict(zip(column_names, arrays)), index=None)
+
+        return pd.DataFrame(dict(zip(range(len(arrays)), arrays)), index=None)
 
     def get_query_exec_time(self) -> Optional[float]:
         return self._query_exec_time
