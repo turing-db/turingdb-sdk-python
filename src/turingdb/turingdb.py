@@ -30,10 +30,10 @@ class TuringDB:
             verify=False,
             timeout=timeout,
         )
-        self._query_exec_time = None
-        self._total_exec_time = None
-        self._t0 = 0
-        self._t1 = 0
+        self._query_exec_time: Optional[float] = None
+        self._total_exec_time: Optional[float] = None
+        self._t0: float = 0
+        self._t1: float = 0
         self._timeout = timeout
 
         self._params = {
