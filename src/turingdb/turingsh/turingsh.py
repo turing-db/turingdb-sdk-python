@@ -98,11 +98,23 @@ def create_completer():
 
 @click.group(invoke_without_command=True)
 @click.option("--host", "-l", default="https://engines.turingdb.ai/sdk")
+@click.option("--local", "-L", is_flag=True, default=False)
 @click.option("--auth-token", "-p", default="")
 @click.option("--instance-id", "-i", default="")
 @click.pass_context
-def main(ctx, host, auth_token, instance_id):
+def main(ctx, host, local, auth_token, instance_id):
     """TuringDB Shell - Interactive database client"""
+    if host == "https://engines.turingdb.ai/sdk":
+        # Host was not specified, use default
+        if local:
+            host = "http://localhost:6666"
+        else:
+            if auth_token == "" or instance_id == "":
+                print_formatted_text(HTML("<red>✘ Missing authentication information</red>"))
+                print_formatted_text(HTML("<red>✘ Provide --auth-token and --instance-id</red>"))
+                print()
+                exit(1)
+
     client = TuringDB(
         host=host,
         auth_token=auth_token,
