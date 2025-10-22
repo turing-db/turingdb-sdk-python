@@ -1,19 +1,14 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Optional
 import os
+from typing import Optional
 
-from turingdb.exceptions import TuringDBException
-from turingdb.path import PathType
-
-if TYPE_CHECKING:
-    from turingdb.turingdb import TuringDB
+from .exceptions import TuringDBException
+from .path import PathType
+from .protocol import QueryProtocol
 
 
 class S3Client:
     def __init__(
         self,
-        turingdb_client: "TuringDB",
         bucket_name: str,
         access_key: Optional[str] = None,
         secret_key: Optional[str] = None,
@@ -22,7 +17,6 @@ class S3Client:
     ):
         import boto3
 
-        self._turingdb_client = turingdb_client
         self._use_scratch = use_scratch
         self._scratch_folder = "__turing__scratch__"
 
@@ -42,18 +36,27 @@ class S3Client:
         secret_key = credentials.secret_key
         access_key = credentials.access_key
 
+        self._access_key = access_key
+        self._secret_key = secret_key
+        self._region = region
+
         if region is None:
             region = ""
 
-        self._turingdb_client.query(
-            f'S3_CONNECT "{access_key}" "{secret_key}" "{region}"'
-        )
-
         self._bucket_name = bucket_name
+
+    def connect(self, query_protocol: QueryProtocol):
+        self._query_protocol = query_protocol
+        self._query_protocol.query(
+            f'S3_CONNECT "{self._access_key}" "{self._secret_key}" "{self._region}"'
+        )
 
     def transfer(self, src: str, dst: str):
         import uuid
         from pathlib import Path
+
+        if self._query_protocol is None:
+            raise TuringDBException("TuringDB client is not connected")
 
         src_type = PathType.get_type(src)
         dst_type = PathType.get_type(dst)
@@ -92,12 +95,12 @@ class S3Client:
                     raise NotImplementedError("Directory upload is not implemented")
 
                 query = f'S3_PUSH "{src}" "{dst}"'
-                self._turingdb_client.query(query)
+                self._query_protocol.query(query)
             case PathType.S3, PathType.TURINGDB:
                 src = src.replace("s3://", f"s3://{self._bucket_name}/")
                 dst = dst.replace("turingdb://", "")
                 query = f'S3_PULL "{src}" "{dst}"'
-                self._turingdb_client.query(query)
+                self._query_protocol.query(query)
 
             # TuringDB <-> Local
             case PathType.LOCAL, PathType.TURINGDB:

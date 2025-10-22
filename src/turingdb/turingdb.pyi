@@ -1,6 +1,6 @@
+from .exceptions import TuringDBException as TuringDBException
+from .s3 import S3Client as S3Client
 from _typeshed import Incomplete
-from turingdb.exceptions import TuringDBException as TuringDBException
-from turingdb.s3 import S3Client as S3Client
 
 class TuringDB:
     DEFAULT_HEADERS: Incomplete
