@@ -11,6 +11,7 @@ dependencies = [
     "pandas-stubs>=2.3.0.250703",
     "click>=8.2.1",
     "prompt-toolkit>=3.0.52",
+    "boto3>=1.40.55",
 ]
 
 [project.urls]
