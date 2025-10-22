@@ -1,11 +1,12 @@
-from typing import Optional
+from __future__ import annotations
 
 import time
+from typing import TYPE_CHECKING, Optional
 
+from turingdb.exceptions import TuringDBException
 
-class TuringDBException(Exception):
-    def __init__(self, message: str):
-        super().__init__(message)
+if TYPE_CHECKING:
+    from turingdb.s3 import S3Client
 
 
 class TuringDB:
@@ -21,8 +22,9 @@ class TuringDB:
         host: str = "https://engines.turingdb.ai/sdk",
         timeout: Optional[int] = None,
     ):
-        import httpx
         import copy
+
+        import httpx
 
         self.host = host
         self._client = httpx.Client(
@@ -30,6 +32,7 @@ class TuringDB:
             verify=False,
             timeout=timeout,
         )
+        self._s3_client: Optional[S3Client] = None
         self._query_exec_time: Optional[float] = None
         self._total_exec_time: Optional[float] = None
         self._t0: float = 0
@@ -65,7 +68,9 @@ class TuringDB:
         return self._send_request("list_loaded_graphs")["data"][0][0]
 
     def is_graph_loaded(self) -> bool:
-        return self._send_request("is_graph_loaded", params={"graph": self.get_graph()})["data"]
+        return self._send_request(
+            "is_graph_loaded", params={"graph": self.get_graph()}
+        )["data"]
 
     def load_graph(self, graph_name: str, raise_if_loaded: bool = True):
         try:
@@ -112,6 +117,26 @@ class TuringDB:
     def get_graph(self) -> str:
         return self._params["graph"]
 
+    def s3_connect(
+        self,
+        bucket_name: str,
+        access_key: Optional[str] = None,
+        secret_key: Optional[str] = None,
+        region: Optional[str] = None,
+        use_scratch: bool = True,
+    ):
+        from .s3 import S3Client
+
+        self._s3_client = S3Client(
+            self, bucket_name, access_key, secret_key, region, use_scratch
+        )
+
+    def transfer(self, src: str, dst: str):
+        if self._s3_client is None:
+            raise TuringDBException("S3 client is not connected")
+
+        self._s3_client.transfer(src, dst)
+
     def _send_request(
         self,
         path: str,
@@ -155,8 +180,8 @@ class TuringDB:
         return json
 
     def _parse_chunks(self, json: dict):
-        import pandas as pd
         import numpy as np
+        import pandas as pd
 
         columns: list[list] = []
 
