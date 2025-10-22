@@ -1,12 +1,8 @@
-from __future__ import annotations
-
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
-from turingdb.exceptions import TuringDBException
-
-if TYPE_CHECKING:
-    from turingdb.s3 import S3Client
+from .exceptions import TuringDBException
+from .s3 import S3Client
 
 
 class TuringDB:
@@ -128,8 +124,9 @@ class TuringDB:
         from .s3 import S3Client
 
         self._s3_client = S3Client(
-            self, bucket_name, access_key, secret_key, region, use_scratch
+            bucket_name, access_key, secret_key, region, use_scratch
         )
+        self._s3_client.connect(self)
 
     def transfer(self, src: str, dst: str):
         if self._s3_client is None:
