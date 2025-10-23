@@ -19,7 +19,6 @@ class TuringDB:
         timeout: Optional[int] = None,
     ):
         import copy
-
         import httpx
 
         self.host = host
