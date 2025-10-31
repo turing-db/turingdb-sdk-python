@@ -107,6 +107,18 @@ class TuringDB:
         else:
             self.set_commit(commit)
 
+    def new_change(self) -> int:
+        if self._params.get("change") is not None:
+            raise TuringDBException("Cannot create a new change while working on one")
+
+        if self._params.get("commit") is not None:
+            raise TuringDBException("Cannot create a new change while working on a commit")
+
+        res = self.query("CHANGE NEW")
+        self._params["change"] = res.values[0][0]
+        return self._params["change"]
+
+
     def set_graph(self, graph_name: str):
         self._params["graph"] = graph_name
 
