@@ -5,12 +5,14 @@ TuringDB Shell Client
 import click
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.shortcuts import print_formatted_text
-from prompt_toolkit.formatted_text import HTML
+
+from turingdb import TuringDB, TuringDBException
+from turingdb.turingsh.command import shell_command
 
 from . import greeter
-from turingdb import TuringDB, TuringDBException
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -28,7 +30,7 @@ def create_completer():
         "LIST_LOADED_GRAPHS",
         "help",
         "quit",
-        "status",
+        "checkout",
         # Query keywords
         "DESCENDING",
         "CONSTRAINT",
@@ -99,7 +101,12 @@ def create_completer():
 
 
 @click.group(invoke_without_command=True, context_settings=CONTEXT_SETTINGS)
-@click.option("--host", "-l", default="https://engines.turingdb.ai/sdk", help="Change the address host")
+@click.option(
+    "--host",
+    "-l",
+    default="https://engines.turingdb.ai/sdk",
+    help="Change the address host",
+)
 @click.option("--local", "-L", is_flag=True, default=False, help="Use a local instance")
 @click.option("--auth-token", "-p", default="", help="Authentication token")
 @click.option("--instance-id", "-i", default="", help="Instance ID")
@@ -153,14 +160,24 @@ def start_shell(client: TuringDB):
         "cd": change_graph,
         "list_avail_graphs": list_available_graphs,
         "list_loaded_graphs": list_loaded_graphs,
+        "checkout": checkout,
     }
 
     while True:
         graph = client.get_graph()
+        checkedout = ""
+
+        if client.current_commit != "HEAD":
+            checkedout = f"@{client.current_commit}"
+        elif client.current_change != "main":
+            checkedout = f"@change-{client.current_change}"
+
         try:
             # Get user input with styling
             user_input = prompt(
-                HTML(f"<b><cyan>turingdb:{graph}</cyan></b><gray>></gray> "),
+                HTML(
+                    f"<b><cyan>turingdb:{graph}{checkedout}</cyan></b><gray>></gray> "
+                ),
                 completer=completer,
                 history=history,
                 multiline=False,
@@ -179,18 +196,21 @@ def start_shell(client: TuringDB):
                 continue
 
             if len(cmd_words) == 1:
-                if cmd_lower == "quit":
-                    print_formatted_text(HTML("<yellow>Goodbye! 👋</yellow>"))
-                    break
-                elif cmd_lower == "help":
-                    show_help()
-                    continue
+                match cmd_lower:
+                    case "quit":
+                        print_formatted_text(HTML("<yellow>Goodbye! 👋</yellow>"))
+                        break
+                    case "help":
+                        show_help()
+                        continue
 
             if cmd_words[0] in shell_commands:
                 try:
-                    shell_commands[cmd_words[0]](client, cmd_words)
+                    shell_commands[cmd_words[0]](client, *cmd_words[1:])
                 except ShellException as e:
                     print_formatted_text(HTML(f"<red>✘ {e}</red>"))
+                except Exception as e:
+                    print_formatted_text(HTML(f"<red>✘ Fatal error: {e}</red>"))
                 continue
 
             # Execute query
@@ -199,6 +219,12 @@ def start_shell(client: TuringDB):
                 print_formatted_text(HTML(f"<white>{result}</white>"))
             except TuringDBException as e:
                 print_formatted_text(HTML(f"<red>✘ {e}</red>"))
+                if "CHANGE_NOT_FOUND" in str(e):
+                    print_formatted_text(
+                        HTML("<yellow>⚠ Checking out to the latest commit...</yellow>")
+                    )
+                    checkout(client)
+
             except Exception as e:
                 print_formatted_text(HTML(f"<red>✘ Fatal error: {e}</red>"))
 
@@ -232,15 +258,18 @@ def start_shell(client: TuringDB):
 def show_help():
     """Display help information"""
     help_text = """<b>Available Commands:</b>
-    <cyan>cd my_graph</cyan>               - Change active graph
-    <cyan>LIST_AVAIL_GRAPHS</cyan>         - List available graphs
-    <cyan>LIST_LOADED_GRAPHS</cyan>        - List loaded graphs
-    <cyan>help</cyan>                      - Show this help
-    <cyan>EXIT</cyan> or <cyan>\\q</cyan>  - Quit shell
+    <cyan>cd my_graph</cyan>                - Change active graph
+    <cyan>checkout --change change-0</cyan> - Checkout to a specific change
+    <cyan>checkout --commit a2daef1f</cyan> - Checkout to a specific commit
+    <cyan>checkout</cyan>                   - Checkout to the latest commit
+    <cyan>LIST_AVAIL_GRAPHS</cyan>          - List available graphs
+    <cyan>LIST_LOADED_GRAPHS</cyan>         - List loaded graphs
+    <cyan>help</cyan>                       - Show this help
+    <cyan>EXIT</cyan> or <cyan>\\q</cyan>   - Quit shell
 
 <b>Example queries:</b>
-    <cyan>LOAD GRAPH my_graph</cyan>       - Load graph
-    <cyan>MATCH (n) RETURN n.name</cyan>   - Return all node names
+    <cyan>LOAD GRAPH my_graph</cyan>        - Load graph
+    <cyan>MATCH (n) RETURN n.name</cyan>    - Return all node names
     
 <b>Tips:</b>
     • Use <i>Tab</i> for command completion
@@ -249,15 +278,27 @@ def show_help():
     print_formatted_text(HTML(help_text))
 
 
-def change_graph(client: TuringDB, args: list[str]):
+@shell_command
+@click.command()
+@click.option("--commit", default="HEAD", help="Commit hash or 'HEAD'")
+@click.option("--change", help="ID of the change")
+@click.pass_obj
+def checkout(client, commit: str, change: int):
+    """Checkout a commit or a change"""
+    try:
+        client.checkout(change=change or "main", commit=commit)
+        client.query("HISTORY")
+    except TuringDBException as e:
+        print_formatted_text(HTML(f"<red>✘ {e}</red>"))
+        client.checkout()
+
+
+@shell_command
+@click.command()
+@click.argument("graph-name", default="default")
+@click.pass_obj
+def change_graph(client: TuringDB, graph_name: str):
     """Change the current graph"""
-
-    if len(args) != 2:
-        raise ShellException(
-            "change_graph() missing 1 required positional argument: 'graph_name'"
-        )
-
-    graph_name = args[1]
 
     try:
         client.set_graph(graph_name)
@@ -278,13 +319,11 @@ def change_graph(client: TuringDB, args: list[str]):
         print_formatted_text(HTML(f"<red>✘ Fatal error: {e}</red>"))
 
 
-def list_available_graphs(client: TuringDB, args: list[str]):
+@shell_command
+@click.command()
+@click.pass_obj
+def list_available_graphs(client: TuringDB):
     """List available graphs"""
-
-    if len(args) != 1:
-        raise ShellException(
-            "list_available_graphs() missing 0 required positional argument"
-        )
 
     try:
         graphs = client.list_available_graphs()
@@ -295,13 +334,11 @@ def list_available_graphs(client: TuringDB, args: list[str]):
         print_formatted_text(HTML(f"<red>✘ Fatal error: {e}</red>"))
 
 
-def list_loaded_graphs(client: TuringDB, args: list[str]):
+@shell_command
+@click.command()
+@click.pass_obj
+def list_loaded_graphs(client: TuringDB):
     """List loaded graphs"""
-
-    if len(args) != 1:
-        raise ShellException(
-            "list_loaded_graphs() missing 0 required positional argument"
-        )
 
     try:
         graphs = client.list_loaded_graphs()

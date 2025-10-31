@@ -1,5 +1,5 @@
 import time
-from typing import Optional
+from typing import Literal, Optional
 
 from .exceptions import TuringDBException
 from .s3 import S3Client
@@ -19,6 +19,7 @@ class TuringDB:
         timeout: Optional[int] = None,
     ):
         import copy
+
         import httpx
 
         self.host = host
@@ -93,7 +94,7 @@ class TuringDB:
             change = f"{change:x}"
         self._params["change"] = change
 
-    def checkout(self, change: int | str = "main", commit: str = "HEAD"):
+    def checkout(self, change: int | Literal["main"] = "main", commit: str = "HEAD"):
         if change == "main":
             if "change" in self._params:
                 del self._params["change"]
@@ -202,3 +203,15 @@ class TuringDB:
 
     def get_total_exec_time(self) -> Optional[float]:
         return self._total_exec_time
+
+    @property
+    def current_graph(self) -> str:
+        return self._params["graph"]
+
+    @property
+    def current_commit(self) -> str:
+        return self._params.get("commit") or "HEAD"
+   
+    @property
+    def current_change(self) -> str:
+        return self._params.get("change") or "main"
