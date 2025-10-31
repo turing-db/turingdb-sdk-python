@@ -12,6 +12,8 @@ from prompt_toolkit.formatted_text import HTML
 from . import greeter
 from turingdb import TuringDB, TuringDBException
 
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+
 
 class ShellException(Exception):
     pass
@@ -96,11 +98,11 @@ def create_completer():
     return WordCompleter(commands, ignore_case=True)
 
 
-@click.group(invoke_without_command=True)
-@click.option("--host", "-l", default="https://engines.turingdb.ai/sdk")
-@click.option("--local", "-L", is_flag=True, default=False)
-@click.option("--auth-token", "-p", default="")
-@click.option("--instance-id", "-i", default="")
+@click.group(invoke_without_command=True, context_settings=CONTEXT_SETTINGS)
+@click.option("--host", "-l", default="https://engines.turingdb.ai/sdk", help="Change the address host")
+@click.option("--local", "-L", is_flag=True, default=False, help="Use a local instance")
+@click.option("--auth-token", "-p", default="", help="Authentication token")
+@click.option("--instance-id", "-i", default="", help="Instance ID")
 @click.pass_context
 def main(ctx, host, local, auth_token, instance_id):
     """TuringDB Shell - Interactive database client"""
@@ -110,8 +112,12 @@ def main(ctx, host, local, auth_token, instance_id):
             host = "http://localhost:6666"
         else:
             if auth_token == "" or instance_id == "":
-                print_formatted_text(HTML("<red>✘ Missing authentication information</red>"))
-                print_formatted_text(HTML("<red>✘ Provide --auth-token and --instance-id</red>"))
+                print_formatted_text(
+                    HTML("<red>✘ Missing authentication information</red>")
+                )
+                print_formatted_text(
+                    HTML("<red>✘ Provide --auth-token and --instance-id</red>")
+                )
                 print()
                 exit(1)
 
