@@ -1,7 +1,6 @@
-from typing import TYPE_CHECKING, Protocol
+from typing import Protocol
 
-if TYPE_CHECKING:
-    from pandas import DataFrame
+from pandas import DataFrame
 
 
 class QueryProtocol(Protocol):
