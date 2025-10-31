@@ -1,6 +1,9 @@
 import click
 from . import greeter as greeter
+from _typeshed import Incomplete
 from turingdb import TuringDB as TuringDB, TuringDBException as TuringDBException
+
+CONTEXT_SETTINGS: Incomplete
 
 class ShellException(Exception): ...
 
