@@ -15,8 +15,7 @@ if __name__ == "__main__":
     client.create_graph("stations7")
     client.set_graph("stations7")
 
-    change = client.query("CHANGE NEW").values[0][0]
-    client.checkout(change)
+    change = client.new_change()
 
     with open(f"{folder}/stations.cypher", "r") as f:
         create_query = f.read().replace("\n", " ").strip()
