@@ -2,6 +2,9 @@
 TuringDB Shell Client
 """
 
+import traceback
+from html import escape
+
 import click
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
@@ -210,15 +213,19 @@ def start_shell(client: TuringDB):
                 except ShellException as e:
                     print_formatted_text(HTML(f"<red>✘ {e}</red>"))
                 except Exception as e:
-                    print_formatted_text(HTML(f"<red>✘ Fatal error: {e}</red>"))
+                    content = f"{e}\n{traceback.format_exc()}"
+                    print_formatted_text(
+                        HTML(f"<red>✘ Fatal error: {escape(str(content))}</red>")
+                    )
                 continue
 
             # Execute query
             try:
                 result = client.query(cmd)
-                print_formatted_text(HTML(f"<white>{result}</white>"))
+                print_formatted_text(HTML(f"<white>{escape(str(result))}</white>"))
             except TuringDBException as e:
-                print_formatted_text(HTML(f"<red>✘ {e}</red>"))
+                content = f"{e}"
+                print_formatted_text(HTML(f"<red>✘ {escape(str(content))}</red>"))
                 if "CHANGE_NOT_FOUND" in str(e):
                     print_formatted_text(
                         HTML("<yellow>⚠ Checking out to the latest commit...</yellow>")
@@ -226,7 +233,10 @@ def start_shell(client: TuringDB):
                     checkout(client)
 
             except Exception as e:
-                print_formatted_text(HTML(f"<red>✘ Fatal error: {e}</red>"))
+                content = f"{e}\n{traceback.format_exc()}"
+                print_formatted_text(
+                    HTML(f"<red>✘ Fatal error: {escape(str(content))}</red>")
+                )
 
             exec_time = client.get_total_exec_time()
             if exec_time is not None:
@@ -287,9 +297,10 @@ def checkout(client, commit: str, change: int):
     """Checkout a commit or a change"""
     try:
         client.checkout(change=change or "main", commit=commit)
-        client.query("HISTORY")
+        client.query("CALL db.history()")
     except TuringDBException as e:
-        print_formatted_text(HTML(f"<red>✘ {e}</red>"))
+        content = f"{e}"
+        print_formatted_text(HTML(f"<red>✘ {escape(str(content))}</red>"))
         client.checkout()
 
 
@@ -316,7 +327,8 @@ def change_graph(client: TuringDB, graph_name: str):
     except TuringDBException as e:
         print_formatted_text(HTML(f"<red>✘ {e}</red>"))
     except Exception as e:
-        print_formatted_text(HTML(f"<red>✘ Fatal error: {e}</red>"))
+        content = f"{e}\n{traceback.format_exc()}"
+        print_formatted_text(HTML(f"<red>✘ Fatal error: {escape(str(content))}</red>"))
 
 
 @shell_command
@@ -329,9 +341,11 @@ def list_available_graphs(client: TuringDB):
         graphs = client.list_available_graphs()
         print_formatted_text(HTML(f"<white>{graphs}</white>"))
     except TuringDBException as e:
-        print_formatted_text(HTML(f"<red>✘ {e}</red>"))
+        content = f"{e}"
+        print_formatted_text(HTML(f"<red>✘ {escape(str(content))}</red>"))
     except Exception as e:
-        print_formatted_text(HTML(f"<red>✘ Fatal error: {e}</red>"))
+        content = f"{e}\n{traceback.format_exc()}"
+        print_formatted_text(HTML(f"<red>✘ Fatal error: {escape(str(content))}</red>"))
 
 
 @shell_command
