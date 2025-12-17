@@ -189,26 +189,38 @@ class TuringDB:
         return json
 
     def _parse_chunks(self, json: dict):
-        import numpy as np
         import pandas as pd
-
-        columns: list[list] = []
 
         self._query_exec_time = json["time"]
 
+        header = json["header"]
+        column_names = header["column_names"]
+        column_types = header["column_types"]
+
+        if len(column_names) != len(column_types):
+            raise Exception("Query response column names and types do not match")
+
+        dtype_map = {
+            "String": "string",
+            "Int64": "Int64",
+            "UInt64": "UInt64",
+            "Double": "float64",
+            "Bool": "boolean",
+        }
+
+        df = pd.DataFrame()
+
         for chunk in json["data"]:
-            for i, col in enumerate(chunk):
-                if i >= len(columns):
-                    columns.append([])
-
-                columns[i] = columns[i] + col
-
-        arrays = [np.array(columns[i]) for i in range(len(columns))]
+            df_chunk = pd.DataFrame({
+                cname: pd.Series(col, dtype=dtype_map.get(ctype, "object"))
+                for (cname, ctype), col in zip(zip(column_names, column_types), chunk)
+            })
+            df = pd.concat([df, df_chunk], ignore_index=True)
 
         self._t1 = time.time()
         self._total_exec_time = (self._t1 - self._t0) * 1000
 
-        return pd.DataFrame(dict(zip(range(len(arrays)), arrays)), index=None)
+        return df
 
     def get_query_exec_time(self) -> Optional[float]:
         return self._query_exec_time
