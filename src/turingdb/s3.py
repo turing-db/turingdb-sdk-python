@@ -48,7 +48,7 @@ class S3Client:
     def connect(self, query_protocol: QueryProtocol):
         self._query_protocol = query_protocol
         self._query_protocol.query(
-            f'S3_CONNECT "{self._access_key}" "{self._secret_key}" "{self._region}"'
+            f'S3 CONNECT "{self._access_key}" "{self._secret_key}" "{self._region}"'
         )
 
     def transfer(self, src: str, dst: str):
@@ -94,12 +94,12 @@ class S3Client:
                 if os.path.isdir(src):
                     raise NotImplementedError("Directory upload is not implemented")
 
-                query = f'S3_PUSH "{src}" "{dst}"'
+                query = f'S3 PUSH "{src}" "{dst}"'
                 self._query_protocol.query(query)
             case PathType.S3, PathType.TURINGDB:
                 src = src.replace("s3://", f"s3://{self._bucket_name}/")
                 dst = dst.replace("turingdb://", "")
-                query = f'S3_PULL "{src}" "{dst}"'
+                query = f'S3 PULL "{src}" "{dst}"'
                 self._query_protocol.query(query)
 
             # TuringDB <-> Local
