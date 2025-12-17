@@ -115,7 +115,7 @@ class TuringDB:
             raise TuringDBException("Cannot create a new change while working on a commit")
 
         res = self.query("CHANGE NEW")
-        self._params["change"] = res.values[0][0]
+        self._params["change"] = res.values["changeID"][0]
         return self._params["change"]
 
 
